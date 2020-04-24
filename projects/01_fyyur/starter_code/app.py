@@ -13,6 +13,9 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+import click
+from flask.cli import with_appcontext
+
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -23,6 +26,134 @@ app.config.from_object('config')
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+#----------------------------------------------------------------------------#
+# Custom commands to create fake data in the database.
+#----------------------------------------------------------------------------#
+
+@click.command(name='delete_all')
+@with_appcontext
+def delete_all():
+  Artist.query.delete()
+  Venue.query.delete()
+  db.session.commit()
+
+app.cli.add_command(delete_all)
+
+@click.command(name='create_all')
+@with_appcontext
+def create_all():
+  artists_and_venues = [
+    Artist(
+      name='Guns N Petals',
+      city='San Francisco',
+      state='CA',
+      phone='326-123-5000',
+      genres=['Rock n Roll'],
+      website='https://www.gunsnpetalsband.com',
+      facebook_link='https://www.facebook.com/GunsNPetals',
+      seeking_venue=True,
+      seeking_description='Looking for shows to perform at in the San Francisco Bay Area!',
+      image_link='https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80',
+    ),
+    Artist(
+      name='Matt Quevedo',
+      city='New York',
+      state='NY',
+      phone='300-400-5000',
+      genres=['Jazz'],
+      facebook_link='https://www.facebook.com/mattquevedo923251523',
+      seeking_venue=False,
+      image_link='https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80',
+    ),
+    Artist(
+      name='The Wild Sax Band',
+      city='San Francisco',
+      state='CA',
+      phone='432-325-5432',
+      genres=['Jazz', 'Classical'],
+      seeking_venue=False,
+      image_link='https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80',
+    ),
+    Venue(
+      name='The Musical Hop',
+      address='1015 Folsom Street',
+      city='San Francisco',
+      state='CA',
+      phone='123-123-1234',
+      genres=['Jazz', 'Reggae', 'Swing', 'Classical', 'Folk'],
+      website='https://www.themusicalhop.com',
+      facebook_link='https://www.facebook.com/TheMusicalHop',
+      seeking_talent=True,
+      seeking_description='We are on the lookout for a local artist to play every two weeks. Please call us.',
+      image_link='https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60',
+    ),
+    Venue(
+      name='The Dueling Pianos Bar',
+      address='335 Delancey Street',
+      city='New York',
+      state='NY',
+      phone='914-003-1132',
+      genres=['Classical', 'R&B', 'Hip-Hop'],
+      website='https://www.theduelingpianos.com',
+      facebook_link='https://www.facebook.com/theduelingpianos',
+      seeking_talent=False,
+      image_link='https://images.unsplash.com/photo-1497032205916-ac775f0649ae?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=750&q=80',
+    ),
+    Venue(
+      name='Park Square Live Music & Coffee',
+      address='34 Whiskey Moore Ave',
+      city='San Francisco',
+      state='CA',
+      phone='415-000-1234',
+      genres=['Rock n Roll', 'Jazz', 'Classical', 'Folk'],
+      website='https://www.parksquarelivemusicandcoffee.com',
+      facebook_link='https://www.facebook.com/ParkSquareLiveMusicAndCoffee',
+      seeking_talent=False,
+      image_link='https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80',
+    ),
+  ]
+
+  db.session.add_all(artists_and_venues)
+  db.session.commit()
+
+  guns_n_petals = Artist.query.filter_by(name='Guns N Petals').first()
+  matt_quevedo = Artist.query.filter_by(name='Matt Quevedo').first()
+  the_wild_sax_band = Artist.query.filter_by(name='The Wild Sax Band').first()
+  the_musical_hop = Venue.query.filter_by(name='The Musical Hop').first()
+  park_square_live_music_coffee = Venue.query.filter_by(name='Park Square Live Music & Coffee').first()
+
+  shows = [
+    Show(
+      start_time='2019-05-21T21:30:00.000Z',
+      artist=guns_n_petals,
+      venue=the_musical_hop,
+    ),
+    Show(
+      start_time='2019-06-15T23:00:00.000Z',
+      artist=matt_quevedo,
+      venue=park_square_live_music_coffee,
+    ),
+    Show(
+      start_time='2035-04-01T20:00:00.000Z',
+      artist=the_wild_sax_band,
+      venue=park_square_live_music_coffee,
+    ),
+    Show(
+      start_time='2035-04-08T20:00:00.000Z',
+      artist=the_wild_sax_band,
+      venue=park_square_live_music_coffee,
+    ),
+    Show(
+      start_time='2035-04-15T20:00:00.000Z',
+      artist=the_wild_sax_band,
+      venue=park_square_live_music_coffee,
+    ),
+  ]
+
+  db.session.add_all(shows)
+  db.session.commit()
+
+app.cli.add_command(create_all)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
@@ -42,7 +173,7 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean, nullable=False, default=False)
     seeking_description = db.Column(db.Text)
-    shows = db.relationship('Show', backref='venue', lazy=True)
+    shows = db.relationship('Show', backref='venue', cascade='save-update, merge, delete', lazy=True)
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -58,15 +189,15 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, nullable=False, default=False)
     seeking_description = db.Column(db.Text)
-    shows = db.relationship('Show', backref='artist', lazy=True)
+    shows = db.relationship('Show', backref='artist', cascade='save-update, merge, delete', lazy=True)
 
 class Show(db.Model):
     __tablename__ = 'Show'
 
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id', ondelete='CASCADE'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id', ondelete='CASCADE'), nullable=False)
 
 #----------------------------------------------------------------------------#
 # Filters.

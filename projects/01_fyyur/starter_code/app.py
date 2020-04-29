@@ -361,15 +361,33 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
+  error = False
+  try:
+    venue = Venue(
+      name=request.form['name'],
+      genres=request.form.getlist('genres'),
+      address=request.form['address'],
+      city=request.form['city'],
+      state= request.form['state'],
+      phone=request.form['phone'],
+      facebook_link=request.form['facebook_link'],
+    )
 
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+    db.session.add(venue)
+    db.session.commit()
+    venue_name = venue.name
+  except:
+    error = True
+    db.session.rollback()
+  finally:
+    db.session.close()
+  if error:
+    form = VenueForm()
+    flash('An error occurred. Venue ' + venue_name + ' could not be listed.', 'alert-danger')
+    return render_template('forms/new_venue.html', form=form)
+  else:
+    flash('Venue ' + venue_name + ' was successfully listed!', 'alert-success')
+    return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
@@ -576,10 +594,10 @@ def create_artist_submission():
     db.session.close()
   if error:
     form = ArtistForm()
-    flash('An error occurred. Artist ' + artist_name + ' could not be listed.')
+    flash('An error occurred. Artist ' + artist_name + ' could not be listed.', 'alert-danger')
     return render_template('forms/new_artist.html', form=form)
   else:
-    flash('Artist ' + artist_name + ' was successfully listed!')
+    flash('Artist ' + artist_name + ' was successfully listed!', 'alert-success')
     return render_template('pages/home.html')
 
 #  Shows

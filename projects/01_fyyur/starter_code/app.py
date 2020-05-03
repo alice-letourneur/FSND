@@ -175,6 +175,9 @@ class Venue(db.Model):
     seeking_description = db.Column(db.Text)
     shows = db.relationship('Show', backref='venue', cascade='save-update, merge, delete', lazy=True)
 
+    def __repr__(self):
+      return f'<Venue {self.id} {self.name}>'
+
 class Artist(db.Model):
     __tablename__ = 'Artist'
 
@@ -191,6 +194,9 @@ class Artist(db.Model):
     seeking_description = db.Column(db.Text)
     shows = db.relationship('Show', backref='artist', cascade='save-update, merge, delete', lazy=True)
 
+    def __repr__(self):
+      return f'<Artist {self.id} {self.name}>'
+
 class Show(db.Model):
     __tablename__ = 'Show'
 
@@ -198,6 +204,9 @@ class Show(db.Model):
     start_time = db.Column(db.DateTime, nullable=False)
     artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id', ondelete='CASCADE'), nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id', ondelete='CASCADE'), nullable=False)
+
+    def __repr__(self):
+      return f'<Show {self.id} {self.start_time}>'
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -229,28 +238,30 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
-  return render_template('pages/venues.html', areas=data);
+  venues_by_location = []
+  for city_state in Venue.query.distinct(Venue.city, Venue.city):
+    venues_for_location = []
+
+    for venue in Venue.query.filter(Venue.city == city_state.city, Venue.state == city_state.state).all():
+      num_upcoming_shows = Show.query.join(Venue).filter(Venue.id == venue.id, Show.start_time >= datetime.now()).count()
+
+      venues_for_location.append(
+        {
+          "id": venue.id,
+          "name": venue.name,
+          "num_upcoming_shows": num_upcoming_shows,
+        }
+      )
+
+    venues_by_location.append(
+      {
+        "city": city_state.city,
+        "state": city_state.state,
+        "venues": venues_for_location,
+      }
+    )
+
+  return render_template('pages/venues.html', areas=venues_by_location);
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():

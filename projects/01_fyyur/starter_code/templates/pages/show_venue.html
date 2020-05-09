@@ -49,12 +49,19 @@
 	</div>
 </div>
 <section>
+	<form action="{{ url_for('delete_venue', venue_id=venue.id) }}" method="post">
+		<input class="btn btn-danger" type="submit" value="Delete this venue" />
+	</form>
+</section>
+<section>
 	<h2 class="monospace">{{ venue.upcoming_shows_count }} Upcoming {% if venue.upcoming_shows_count == 1 %}Show{% else %}Shows{% endif %}</h2>
 	<div class="row">
 		{%for show in venue.upcoming_shows %}
 		<div class="col-sm-4">
 			<div class="tile tile-show">
-				<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
+				{% if venue.image_link %}
+					<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
+				{% endif %}
 				<h5><a href="/artists/{{ show.artist_id }}">{{ show.artist_name }}</a></h5>
 				<h6>{{ show.start_time|datetime('full') }}</h6>
 			</div>
@@ -68,7 +75,9 @@
 		{%for show in venue.past_shows %}
 		<div class="col-sm-4">
 			<div class="tile tile-show">
-				<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
+				{% if venue.image_link %}
+					<img src="{{ show.artist_image_link }}" alt="Show Artist Image" />
+				{% endif %}
 				<h5><a href="/artists/{{ show.artist_id }}">{{ show.artist_name }}</a></h5>
 				<h6>{{ show.start_time|datetime('full') }}</h6>
 			</div>
